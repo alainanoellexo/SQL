@@ -1,0 +1,39 @@
+--Create a store database
+CREATE TABLE store_items (id INTEGER PRIMARY KEY, item TEXT, item_quantity INTEGER, popularity INTEGER, price INTEGER);
+
+--Inserted data into a table
+INSERT INTO store_items VALUES (1, "T-shirts", 6, 4, 14.00);
+INSERT INTO store_items VALUES (2, "Jeans", 10, 5, 15.00);
+INSERT INTO store_items VALUES (3, "Tank tops", 12, 4, 10.00);
+INSERT INTO store_items VALUES (4, "Shoes", 13, 2, 11.00);
+INSERT INTO store_items VALUES (5, "Pajamas", 12, 2, 15.00);
+INSERT INTO store_items VALUES (6, "Sweat pants", 14, 3, 10.00);
+INSERT INTO store_items VALUES (7, "Leggings", 11, 3, 10.00);
+INSERT INTO store_items VALUES (8, "Shorts", 12, 5, 14.00);
+INSERT INTO store_items VALUES (9, "Dresses", 11, 4, 16.00);
+INSERT INTO store_items VALUES (10, "Socks", 10, 1, 4.00);
+INSERT INTO store_items VALUES (11, "Dress Pants", 18, 1, 14.00);
+INSERT INTO store_items VALUES (12, "Tights", 6, 1, 7.00);
+INSERT INTO store_items VALUES (13, "Purses", 7, 2, 16.00);
+INSERT INTO store_items VALUES (14, "Flip flops", 10, 2, 5.00);
+INSERT INTO store_items VALUES (15, "Hats", 5, 1, 10.00);
+
+--Display the database ordered by price
+SELECT * 
+FROM store_items 
+WHERE price > 10 ORDER BY price DESC;
+
+--What is the average price of items in the store?
+SELECT AVG(price) "avg item price"
+FROM store_items;
+
+--What are the 5 most popular items? 
+SELECT item, price, popularity
+FROM store_items
+ORDER BY popularity desc
+LIMIT 5; 
+
+--How many items do we have in stock?
+SELECT sum(item_quantity)
+FROM store_items
+

@@ -114,7 +114,7 @@ SELECT date, winner, winner_pts, loser, loser_pts
 FROM superbowls
 WHERE (state='Michigan' AND city='Detroit' AND date='Feb 5 2006');
 
---How many Super Bowls did the New England Patriots play in? What was the score?
+--What Super Bowls did the New England Patriots play in? What was the score?
 SELECT date, SB, winner, winner_pts, loser, loser_pts
 FROM superbowls
 WHERE loser='New England Patriots' 

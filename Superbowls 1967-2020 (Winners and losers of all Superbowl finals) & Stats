@@ -69,31 +69,31 @@ INSERT INTO superbowls(Date,SB,Winner,Winner_Pts,Loser,Loser_Pts,MVP,Stadium,Cit
 --Show table
 SELECT * FROM superbowls;
 
---What 5 teams scored the most points, what superbowl game was it, and when did it happen?
+--What 5 teams scored the most points and won, what Superbowl game was it, and when did it happen?
 SELECT date, SB, Winner, winner_pts 
 FROM superbowls
 ORDER BY winner_pts desc
 LIMIT 5;
 
---What 5 teams scored the least points, what superbowl game was it, and when did it happen?
+--What 5 teams scored the least points and lost, what Superbowl game was it, and when did it happen?
 SELECT date, SB, loser, loser_pts
 FROM superbowls
 ORDER BY loser_pts
 LIMIT 5; 
 
---What are the average winner points?
+--What are the average winning points?
 SELECT avg(winner_pts)
 FROM superbowls;
 
---What team scored the MAX points?
+--What team scored the most points overall and won the SuperBowl?
 SELECT winner, MAX(winner_pts)
 FROM superbowls;
 
---What team scored the MIN loser points?
+--What team that lost the SuperBowl scored the least points?
 SELECT loser, MIN(loser_pts)
 FROM superbowls;
 
---How many teams were above average, average, and below average based on their winner points?
+--How many teams were above average, average, and below average based on their winning points?
 SELECT COUNT(*),
     CASE
         WHEN winner_pts>30 THEN "above avg"
@@ -103,7 +103,7 @@ SELECT COUNT(*),
 FROM superbowls
 GROUP BY avg_rating_of_winner_pts;
 
---Whish teams had winner points greater than 40 and when did it happen?
+--Which teams had winning points greater than 40 and when did it happen?
 SELECT date, winner, max(winner_pts) AS max_winner_points
 FROM superbowls
 GROUP BY winner HAVING winner_pts>40
@@ -113,3 +113,9 @@ ORDER BY winner_pts desc;
 SELECT date, winner, winner_pts, loser, loser_pts
 FROM superbowls
 WHERE (state='Michigan' AND city='Detroit' AND date='Feb 5 2006');
+
+--How many Super Bowls did the New England Patriots play in? What was the score?
+SELECT date, SB, winner, winner_pts, loser, loser_pts
+FROM superbowls
+WHERE loser='New England Patriots' 
+OR winner='New England Patriots';

@@ -1,0 +1,30 @@
+--Created a table with Harry Potter character names and what actor/actress played them
+CREATE TABLE characters (id INTEGER PRIMARY KEY, character_name TEXT, actors_name TEXT);
+
+INSERT INTO characters VALUES (1, "Harry Potter", "Daniel Radcliffe");
+INSERT INTO characters VALUES (2, "Hermione Granger", "Emma Watson");
+INSERT INTO characters VALUES (3, "Ron Weasley", "Rupert Grint");
+INSERT INTO characters VALUES (4, "Draco Malfoy", "Tom Felton");
+INSERT INTO characters VALUES (5, "Neville Longbottom", "Matthew Lewis");
+INSERT INTO characters VALUES (6, "Ginny Weasley", "Bonnie Wright");
+INSERT INTO characters VALUES (7, "Luna Lovegood", "Evanna Lynch");
+INSERT INTO characters VALUES (8, "Cedric Diggory", "Robert Pattinson");
+
+--Created a table showing what Hogwarts house each character is in
+CREATE TABLE houses (id INTEGER PRIMARY KEY, character_name TEXT, hogwarts_house TEXT);
+INSERT INTO houses VALUES (1, "Harry Potter", "Gryffindor");
+INSERT INTO houses VALUES (2, "Hermione Granger", "Gryfinndor");
+INSERT INTO houses VALUES (3, "Ron Weasley", "Gryfinndor");
+INSERT INTO houses VALUES (4, "Draco Malfoy", "Slytherin");
+INSERT INTO houses VALUES (5, "Neville Longbottom", "Gryfinndor");
+INSERT INTO houses VALUES (6, "Ginny Weasley", "Gryfinndor");
+INSERT INTO houses VALUES (7, "Luna Lovegood", "Ravenclaw");
+INSERT INTO houses VALUES (8, "Cedric Diggory", "Hufflepuff");
+
+--Joined the two tables to show each character's name, what actor/actress played them, and what Hogwarts house they are in into one table
+SELECT c.character_name, h.hogwarts_house, c.actors_name
+FROM characters c
+LEFT OUTER JOIN houses h
+ON c.id=h.id
+GROUP BY c.character_name
+ORDER BY hogwarts_house;

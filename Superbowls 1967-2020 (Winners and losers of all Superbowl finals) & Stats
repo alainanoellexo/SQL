@@ -1,4 +1,4 @@
---Imported a table from Khan Academy
+--Imported a table
 CREATE TABLE superbowls(
   Date      TEXT PRIMARY KEY,
   SB         TEXT,

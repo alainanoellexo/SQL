@@ -63,10 +63,10 @@ VALUES
 -- The following SQL was written to answer specific questions about the content on Netflix:
 
 -- Show a sample of the netflix_titles_info table
-SELECT * FROM "netflix_titles_info" LIMIT 5
+SELECT * FROM "netflix_titles_info" LIMIT 5;
 
 -- Show a sample of the netflix_people table
-SELECT * FROM "netflix_people" LIMIT 5
+SELECT * FROM "netflix_people" LIMIT 5;
 
 -- Combined the two tables to show the type, title, rating, and director.
 SELECT titles.type, titles.title, titles.rating, people.director

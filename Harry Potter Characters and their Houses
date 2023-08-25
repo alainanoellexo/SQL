@@ -1,4 +1,4 @@
---Created a table with Harry Potter character names and what actor/actress played them
+-- Created a table with Harry Potter character names and what actor/actress played them
 CREATE TABLE characters (id INTEGER PRIMARY KEY, character_name TEXT, actors_name TEXT);
 
 INSERT INTO characters VALUES (1, "Harry Potter", "Daniel Radcliffe");

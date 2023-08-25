@@ -1,4 +1,4 @@
---Create a store database
+-- Create a store database
 CREATE TABLE store_items (id INTEGER PRIMARY KEY, item TEXT, item_quantity INTEGER, popularity INTEGER, price INTEGER);
 
 --Inserted data into a table

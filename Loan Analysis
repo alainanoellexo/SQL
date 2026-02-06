@@ -1,0 +1,209 @@
+/*
+The purpose of this project was to practice the kind of analysis used in fintech and investor operations roles.
+
+I worked through:
+- Building overall portfolio KPIs (total funded, averages, credit profile)
+- Analyzing loan outcomes to determine which status represents higher risk
+- Segmenting performance by loan purpose
+- Calculating weighted average interest rates
+- Creating credit score buckets and comparing performance
+- Identifying concentration risk (where losses are heavier than funding share)
+- Using window functions to find top loans within each segment
+
+My goal  was to show that I can connect SQL to business reasoning, not 
+just pull numbers, but understand what those numbers say about risk and 
+portfolio performance.
+
+Tools used: PostgreSQL & pgAdmin
+*/
+
+-- Table set up
+DROP TABLE IF EXISTS loans;
+
+-- Create table
+CREATE TABLE loans (
+    person_age FLOAT,
+    person_gender TEXT,
+    person_education TEXT,
+    person_income FLOAT,
+    person_emp_exp INT,
+    person_home_ownership TEXT,
+    loan_amnt FLOAT,
+    loan_intent TEXT,
+    loan_int_rate FLOAT,
+    loan_percent_income FLOAT,
+    cb_person_cred_hist_length FLOAT,
+    credit_score INT,
+    previous_loan_defaults_on_file TEXT,
+    loan_status INT
+);
+
+-- IMPORT DATA
+-- I used pgAdmins's Import/Export tool on the loans table to load loan_data.csv
+
+-- SANITY CHECKS
+SELECT * 
+FROM loans 
+LIMIT 10;
+
+SELECT
+    COUNT(*) AS total_loans
+FROM loans;
+
+-- How many loans have previously defaulted?
+SELECT 
+  COUNT(*) 
+FROM loans 
+WHERE previous_loan_defaults_on_file='Yes';
+
+-- How many loans are in each loan intent category?
+SELECT
+    loan_intent,
+    COUNT(*) AS loan_count
+FROM loans
+GROUP BY loan_intent
+ORDER BY loan_count DESC;
+
+-- Basic KPI snapshot
+SELECT 
+	COUNT(*) AS total_loans,
+	TO_CHAR(SUM(loan_amnt), '$999,999,999,990.00') AS total_funded,
+	TO_CHAR(AVG(loan_amnt), '$999,999,990.00') AS avg_loan_amount,
+	TO_CHAR(ROUND(AVG(loan_int_rate)::numeric, 2), 'FM999.00') || '%' AS avg_interest_rate,
+	ROUND(AVG(credit_score)::numeric, 0) AS avg_credit_score
+FROM loans;
+
+-- Outcome analysis (infer which loan_status is "worse")
+SELECT
+    loan_status,
+    COUNT(*) AS loan_count,
+    ROUND(AVG(credit_score)::numeric, 0) AS avg_credit_score,
+    TO_CHAR(ROUND(AVG(loan_int_rate)::numeric, 2), 'FM999.00') || '%' AS avg_interest_rate,
+    TO_CHAR(
+        ROUND(
+            (100.0 * SUM(CASE WHEN previous_loan_defaults_on_file = 'Yes' THEN 1 ELSE 0 END) / COUNT(*))::numeric,
+            2
+        ),
+        'FM999.00'
+    ) || '%' AS pct_prior_defaults
+FROM loans
+GROUP BY loan_status
+ORDER BY loan_status;
+
+-- Based on patterns in the results, loan_status = 0 is the worse outcome (much higher % of prior defaults).
+
+-- Bad outcome rate by intent
+SELECT
+	loan_intent,
+	COUNT(*) AS loan_count,
+	TO_CHAR(SUM(loan_amnt), '$999,999,999,990.00') AS total_funded,
+	ROUND(
+		100.0*SUM(
+			CASE
+				WHEN loan_status=0 THEN 1
+				ELSE 0
+			END
+		)/COUNT(*),
+	2) AS bad_outcome_rate
+FROM loans
+GROUP BY loan_intent
+ORDER BY bad_outcome_rate DESC;
+
+-- Weighted average interest (weighted by loan_amnt)
+SELECT
+	TO_CHAR(
+		ROUND(
+			(SUM(loan_amnt*loan_int_rate)/SUM(loan_amnt))::numeric,
+		2),
+	'FM999.00') || '%' AS weighted_avg_interest_rate
+FROM loans;
+
+-- Top 5 largest loans per intent
+SELECT *
+FROM(
+	SELECT
+		loan_intent,
+		loan_amnt,
+		ROW_NUMBER() OVER(
+			PARTITION BY loan_intent
+			ORDER BY loan_amnt DESC
+		) AS rank_within_intent
+	FROM loans
+) ranked_loans
+WHERE rank_within_intent <= 5
+ORDER BY loan_intent, rank_within_intent;
+
+-- Credit score buckets & performance
+WITH bucketed AS (
+  SELECT
+    CASE
+      WHEN credit_score < 580 THEN '<580'
+      WHEN credit_score BETWEEN 580 AND 669 THEN '580-669'
+      WHEN credit_score BETWEEN 670 AND 739 THEN '670-739'
+      ELSE '740+'
+    END AS credit_bucket,
+    loan_amnt,
+    loan_int_rate,
+    loan_status
+  FROM loans
+  WHERE credit_score IS NOT NULL
+)
+SELECT
+  credit_bucket,
+  COUNT(*) AS loan_count,
+  TO_CHAR(SUM(loan_amnt), '$999,999,999,990.00') AS total_funded,
+  TO_CHAR(ROUND(AVG(loan_int_rate)::numeric, 2), 'FM999.00') || '%' AS avg_interest_rate,
+  TO_CHAR(
+    ROUND(
+      (100.0 * SUM(CASE WHEN loan_status = 0 THEN 1 ELSE 0 END) / COUNT(*))::numeric,
+      2
+    ),
+    'FM999.00'
+  ) || '%' AS bad_outcome_rate
+FROM bucketed
+GROUP BY credit_bucket
+ORDER BY
+  CASE credit_bucket
+    WHEN '<580' THEN 1
+    WHEN '580-669' THEN 2
+    WHEN '670-739' THEN 3
+    ELSE 4
+  END;
+
+-- Concentration risk (Share of Total Funded vs Share of Bad Outcomes by intent)
+WITH intent_stats AS (
+  SELECT
+      loan_intent,
+      SUM(loan_amnt) AS funded_amt,
+      SUM(CASE WHEN loan_status = 0 THEN 1 ELSE 0 END) AS bad_count
+  FROM loans
+  GROUP BY loan_intent
+),
+totals AS (
+  SELECT
+      SUM(funded_amt) AS total_funded_amt,
+      SUM(bad_count)  AS total_bad_count
+  FROM intent_stats
+),
+final AS (
+  SELECT
+      s.loan_intent,
+      s.funded_amt,
+      s.bad_count,
+      (s.funded_amt / NULLIF(t.total_funded_amt, 0))::numeric AS funded_share,
+      (s.bad_count  / NULLIF(t.total_bad_count, 0))::numeric  AS bad_share
+  FROM intent_stats s
+  CROSS JOIN totals t
+)
+SELECT
+    loan_intent,
+    TO_CHAR(funded_amt, '$999,999,999,990.00') AS funded_amount,
+    bad_count AS bad_outcomes,
+    TO_CHAR(ROUND(funded_share * 100, 2), 'FM999.00') || '%' AS share_of_total_funded,
+    TO_CHAR(ROUND(bad_share * 100, 2), 'FM999.00') || '%' AS share_of_bad_outcomes,
+    CASE
+      WHEN bad_share > funded_share THEN 'HIGH_CONCENTRATION_RISK'
+      ELSE 'OK'
+    END AS concentration_risk_flag
+FROM final
+ORDER BY bad_share DESC, funded_share DESC;
